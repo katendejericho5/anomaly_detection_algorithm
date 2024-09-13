@@ -1,117 +1,148 @@
-# Anomaly Detection in Data Streams
+# Anomaly Detection and Visualization
 
-This project implements a basic anomaly detection system for streaming data. It generates a stream of data with seasonal patterns, gradual changes, and occasional anomalies, and it detects outliers or unusual data points in real-time.
+## Overview
 
-## Table of Contents
-
-1. [Introduction](#introduction)
-2. [How It Works](#how-it-works)
-3. [Components](#components)
-   - [1. FeatureExtractor](#1-featureextractor)
-   - [2. AnomalyDetector](#2-anomalydetector)
-   - [3. DataStreamSimulator](#3-datastreamsimulator)
-   - [4. AnomalyVisualizer](#4-anomalyvisualizer)
-4. [Running the Program](#running-the-program)
-5. [Visualizing the Data](#visualizing-the-data)
-
----
-
-## Introduction
-
-This Python project detects anomalies in a streaming data set using adaptive thresholding. It simulates a data stream and continuously checks if incoming data points are normal or abnormal. The project also includes a real-time visualization to see both the data points and detected anomalies.
-
-## How It Works
-
-- A **data stream** is generated with normal patterns, like waves and some random noise.
-- Occasionally, **anomalies** (unusual spikes or drops) are introduced into the stream.
-- The code extracts **features** from the incoming data points, such as the average and trend over time.
-- Using a **Z-score**, the system calculates how far a data point is from the expected range.
-- If the Z-score is higher than a certain threshold, the point is flagged as an **anomaly**.
-- A real-time graph is drawn to show both the data and the detected anomalies.
+The Anomaly Detection and Visualization project is a Python-based tool that detects and visualizes anomalies in a data stream. The project combines data simulation, feature extraction, anomaly detection, and real-time visualization to provide insights into data behavior and anomalies. It utilizes statistical methods such as Z-score and Interquartile Range (IQR) for anomaly detection and employs real-time plotting for visualization.
 
 ## Components
 
-### 1. FeatureExtractor
+1. **DataStreamSimulator**: Simulates a data stream with seasonal patterns, drift, and occasional anomalies.
+2. **FeatureExtractor**: Extracts statistical features from the data stream using a sliding window approach.
+3. **AnomalyDetector**: Detects anomalies in the data stream using adaptive thresholds based on Z-score and IQR.
+4. **AnomalyVisualizer**: Provides real-time visualization of the data stream and detected anomalies using `matplotlib`.
 
-This component processes the incoming data and extracts useful features to help identify anomalies.
+## Techniques Used
 
-- **Sliding Window:** A small window of the most recent data points is maintained.
-- **Features:** From this window, features like the moving average, standard deviation, and trend are calculated.
-  
-  **Key Functionality:**
-  - **Raw Value**: The latest data point.
-  - **Moving Average**: Average of the last `N` data points.
-  - **Z-Score**: How far the data point is from the average (in terms of standard deviations).
-  - **Trend (Slope)**: The rate at which the data is increasing or decreasing.
+- **Data Simulation**: Generates synthetic data with seasonal variations, drift, and anomalies.
+- **Feature Extraction**: Uses statistical methods (mean, standard deviation, Z-score, IQR) to extract features from the data stream.
+- **Anomaly Detection**: Applies Z-score and IQR-based methods to identify anomalies.
+- **Real-Time Visualization**: Uses `matplotlib` to create real-time plots of data points, anomaly scores, and detection thresholds.
 
-### 2. AnomalyDetector
+## Requirements
 
-This component decides if a data point is an anomaly or not. 
+The project requires the following Python packages:
 
-- **Z-score Threshold**: A data point is flagged as an anomaly if its Z-score is higher than a certain threshold (e.g., 3).
-- **Adaptive Threshold**: As new data comes in, the threshold is adjusted based on recent Z-scores to ensure it's dynamic.
+- `numpy`
+- `matplotlib`
 
-  **Key Functionality:**
-  - **Z-Score Calculation**: Determines how extreme a data point is compared to recent values.
-  - **Anomaly Detection**: Compares the maximum Z-score of the extracted features to the threshold to decide if it is an anomaly.
 
-### 3. DataStreamSimulator
-
-This component simulates a data stream with patterns and random anomalies.
-
-- **Seasonal Component**: A wave-like pattern is added to mimic real-world behavior like temperature changes or stock prices.
-- **Drift**: Gradual changes over time to make the data realistic.
-- **Noise**: Random noise is added to each data point to make it less predictable.
-- **Anomalies**: Occasionally, a random large jump or drop is introduced to simulate an anomaly.
-
-### 4. AnomalyVisualizer
-
-This component handles real-time visualization of the data stream and detected anomalies using `matplotlib`.
-
-- **Real-time Plot**: It shows the incoming data points and highlights anomalies in red.
-- **Scores Plot**: It also displays a plot of the Z-scores and the threshold used to detect anomalies.
-
-  **Key Functionality:**
-  - **Data Stream Visualization**: Plots the real-time data stream with anomalies highlighted.
-  - **Anomaly Scores**: Plots the Z-scores to see how far each point deviates from the normal range.
-  
-## Running the Program
-
-To run this program, make sure you have Python installed along with the required libraries. You can install the required libraries by running:
+Install the dependencies using:
 
 ```bash
-pip install numpy matplotlib
+pip install -r requirements.txt
 ```
 
-Then, simply run the Python script:
+## Code Overview
 
-```bash
-python anomaly_detection.py
+### 1. `data_stream.py`
+
+Simulates a data stream with:
+- **Seasonal Patterns**: Sinusoidal variations to mimic seasonal changes.
+- **Drift**: Gradual increase or decrease in the base value.
+- **Anomalies**: Randomly introduced anomalies with a 1% probability.
+
+```python
+import random
+import math
+from typing import Iterator
+
+class DataStreamSimulator:
+    """Simulates a data stream with seasonal patterns, drift, and occasional anomalies."""
+    # Initialization and data generation methods...
 ```
 
-## Visualizing the Data
+### 2. `feature_extraction.py`
 
-Once the script is running, a real-time graph will appear. You will see:
+Extracts features from the data using:
+- **Moving Average**: Mean of the recent data points.
+- **Standard Deviation**: Measure of data spread.
+- **Z-Score**: Standardized measure of deviation from the mean.
+- **Interquartile Range (IQR)**: Range between 75th and 25th percentiles.
+- **Trend (Slope)**: Linear trend using regression.
 
-- **Data Stream (Blue Line):** The simulated data being generated.
-- **Anomalies (Red Dots):** Points where the system has detected an anomaly.
-- **Anomaly Scores (Green Line):** The Z-scores of each data point.
-- **Threshold (Red Dashed Line):** The current threshold for detecting anomalies.
+```python
+import numpy as np
+from collections import deque
+from typing import List
 
----
+class FeatureExtractor:
+    """Extracts statistical features from a sliding window of data."""
+    # Initialization and feature extraction methods...
+```
 
-### Example:
+### 3. `anomaly_detection.py`
 
-![Example Graph](#)
+Detects anomalies using:
+- **Z-Score**: Measures how many standard deviations a data point is from the mean.
+- **IQR**: Compares data point deviation to the IQR-based threshold.
 
-In the above visualization:
-- **Blue Line**: Represents the data stream.
-- **Red Dots**: Represent the detected anomalies.
-- **Green Line**: Represents the anomaly scores.
-- **Red Dashed Line**: Represents the adaptive Z-score threshold.
+```python
+import numpy as np
+from collections import deque
+from typing import Tuple
+from feature_extraction import FeatureExtractor
 
----
+class AnomalyDetector:
+    """Detects anomalies using Z-score and IQR-based methods."""
+    # Initialization and anomaly detection methods...
+```
 
-## Conclusion
+### 4. `visualisation.py`
 
-This project demonstrates a basic approach to detecting anomalies in a real-time data stream using simple feature extraction and Z-scores. It also provides a way to visualize the data and detected anomalies for easy interpretation.
+Visualizes the data stream and detected anomalies using `matplotlib`:
+- **Data Points Plot**: Line plot of data values.
+- **Anomalies Plot**: Scatter plot for detected anomalies.
+- **Scores and Thresholds**: Line plots for anomaly scores and detection thresholds.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from data_stream import DataStreamSimulator
+from anomaly_detection import AnomalyDetector
+
+class AnomalyVisualizer:
+    """Visualizes real-time data and anomalies."""
+    # Initialization and visualization methods...
+```
+
+### 5. `main.py`
+
+The entry point of the application. Initializes and starts the anomaly visualization process.
+
+```python
+from visualisation import AnomalyVisualizer
+
+def main():
+    """Starts the visualization of the anomaly detection process."""
+    window_size = 50
+    initial_z_threshold = 3
+    visualizer = AnomalyVisualizer(window_size=window_size, initial_z_threshold=initial_z_threshold)
+    visualizer.visualize()
+
+if __name__ == "__main__":
+    main()
+```
+
+## How to Run
+
+1. **Clone the Repository**:
+
+   ```bash
+   git clone https://github.com/katendejericho5/anomaly_detection_algorithm
+   cd anomaly_detection_algorithm
+   ```
+
+2. **Install Dependencies**:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Visualization**:
+
+   ```bash
+   python main.py
+   ```
+
+   This command starts the visualization process, displaying real-time data points, detected anomalies, anomaly scores, and detection thresholds.
