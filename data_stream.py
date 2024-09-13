@@ -25,13 +25,13 @@ class DataStreamSimulator:
         """
         base_value = 50
         for i in range(self.size):
-            seasonal_component = 10 * math.sin(i * 0.05)
-            drift_component = i * self.drift_rate
-            noise = random.uniform(-3, 3)
+            seasonal_component = 10 * math.sin(i * 0.05) # Adds a sinusoidal component to simulate seasonal variations.
+            drift_component = i * self.drift_rate # Adds a linear drift over time.
+            noise = random.uniform(-3, 3) # Adds random noise between -3 and 3 to the data.
             value = base_value + seasonal_component + drift_component + noise
 
             # Introduce occasional anomalies
-            if random.random() < 0.01:  # 1% chance of anomaly
+            if random.random() < 0.01:  #With a 1% probability, an anomaly is added to the value.
                 value += random.choice([-1, 1]) * random.uniform(20, 30)
 
             yield value

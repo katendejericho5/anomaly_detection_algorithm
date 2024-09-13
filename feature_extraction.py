@@ -1,59 +1,76 @@
 import numpy as np
 from collections import deque
-from typing import Tuple
-from feature_extraction import FeatureExtractor
+from typing import Tuple, List
+import random
+import math
+from typing import Iterator
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-class AnomalyDetector:
-    """Detects anomalies in a data stream using adaptive thresholding with Z-score and IQR."""
+class FeatureExtractor:
+    """
+    A class used to extract features from a stream of data points for anomaly detection.
 
-    def __init__(self, window_size: int = 50, initial_z_threshold: float = 3, iqr_factor: float = 1.5):
+    This class maintains a sliding window of the most recent data points and extracts statistical
+    features such as the mean, standard deviation, Z-score, interquartile range (IQR), and the trend (slope) 
+    from the data in the window. These features are helpful for detecting anomalies in real-time data streams.
+
+    Attributes:
+    -----------
+    window : deque
+        A deque object that holds the most recent data points up to the specified window size. 
+        It automatically discards the oldest data point when a new one is added after reaching its max length.
+
+    Methods:
+    --------
+    __init__(window_size: int):
+        Initializes the FeatureExtractor with a specific window size.
+        
+    extract(x: float) -> List[float]:
+        Appends the current data point to the window and extracts key features such as the moving average,
+        standard deviation, Z-score, interquartile range (IQR), and trend (slope).
+    """
+
+    def __init__(self, window_size: int):
         """
-        Initialize the AnomalyDetector.
+        Initializes the FeatureExtractor with a sliding window of a fixed size.
 
         Args:
-            window_size (int): The size of the sliding window for feature extraction.
-            initial_z_threshold (float): The initial Z-score threshold for anomaly detection.
-            iqr_factor (float): The factor to multiply with IQR to determine the threshold.
+            window_size (int): The number of past data points to consider for feature extraction.
+                               This size determines how many data points will be used to calculate the
+                               statistical features.
         """
-        self.feature_extractor = FeatureExtractor(window_size)
-        self.z_threshold = initial_z_threshold
-        self.iqr_factor = iqr_factor
-        self.scores_window = deque(maxlen=window_size)  # Store recent maximum Z-scores
+        # Initialize a deque with a fixed size to store recent data points
+        self.window = deque(maxlen=window_size)
 
-    def detect(self, data_point: float) -> Tuple[bool, float, float]:
+    def extract(self, x: float) -> List[float]:
         """
-        Detect if a data point is an anomaly.
+        Extracts statistical features from the current data point and the recent data in the sliding window.
 
-        Args:
-            data_point (float): The current data point to analyze.
-
-        Returns:
-            Tuple[bool, float, float]: A tuple containing:
-                - A boolean indicating if the point is an anomaly.
-                - The maximum Z-score of the extracted features.
-                - The IQR threshold.
+        The function calculates various features based on the window of recent data points and the current 
+        data point. If the window is not yet full (i.e., has fewer points than `window_size`), the raw value 
+        is returned. Once the window is full, it computes the following features:
+        
+        1. **Current Value**: The raw value of the current data point.
+        2. **Moving Average**: The mean of the data points in the window.
+        3. **Standard Deviation**: A measure of how spread out the data points in the window are.
+        4. **Z-Score**: The number of standard deviations the current value is from the mean.
+        5. **Interquartile Range (IQR)**: The range between the 75th percentile (Q3) and 25th percentile (Q1), used to detect outliers.
+        6. **Trend (Slope)**: The slope of the linear trend in the data points, indicating whether the data shows an increasing, decreasing, or stable trend.
         """
-        features = self.feature_extractor.extract(data_point)
+        # Add the current data point to the sliding window
+        self.window.append(x)
 
-        # Calculate Z-scores for each feature
-        z_scores = [
-            (f - np.mean(self.feature_extractor.window)) / (np.std(self.feature_extractor.window) or 1)
-            for f in features
+        # If the window is not full, return the raw value of the current data point
+        if len(self.window) < self.window.maxlen:
+            return [x]
+
+        # Extract the key statistical features once the window is full
+        return [
+            x,  # Current data point (raw value)
+            np.mean(self.window),  # Moving average of the window
+            np.std(self.window),  # Standard deviation of the window
+            (x - np.mean(self.window)) / (np.std(self.window) or 1),  # Z-score: Standardized measure of how far `x` is from the mean
+            np.percentile(self.window, 75) - np.percentile(self.window, 25),  # IQR: Difference between the 75th and 25th percentiles (Q3 - Q1)
+            np.polyfit(range(len(self.window)), self.window, 1)[0]  # Trend (Slope): Linear trend over the window using linear regression
         ]
-        max_z_score = max(abs(z) for z in z_scores)
-
-        # Calculate IQR-based threshold
-        iqr = np.percentile(self.feature_extractor.window, 75) - np.percentile(self.feature_extractor.window, 25)
-        iqr_threshold = iqr * self.iqr_factor
-
-        # Update the scores window and adjust the Z-score threshold
-        self.scores_window.append(max_z_score)
-        if len(self.scores_window) == self.scores_window.maxlen:
-            self.z_threshold = np.mean(self.scores_window) + 2 * np.std(self.scores_window)
-
-        # Anomaly detection
-        is_anomaly_z = max_z_score > self.z_threshold
-        is_anomaly_iqr = abs(data_point - np.mean(self.feature_extractor.window)) > iqr_threshold
-
-        is_anomaly = is_anomaly_z or is_anomaly_iqr
-        return is_anomaly, max_z_score, iqr_threshold
