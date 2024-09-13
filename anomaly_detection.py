@@ -11,12 +11,13 @@ class AnomalyDetector:
         Initialize the AnomalyDetector.
 
         Args:
-            window_size (int): The size of the sliding window (a fixed number of past data points) for feature extraction.
+            window_size (int): The size of the sliding window for feature extraction.
             initial_z_threshold (float): The initial Z-score threshold for anomaly detection.
+            
         """
         self.feature_extractor = FeatureExtractor(window_size)
         self.z_threshold = initial_z_threshold
-        self.scores_window = deque(maxlen=window_size)
+        self.scores_window = deque(maxlen=window_size) #deque(double end queue) is a list-like container with fast appends and pops on either end
 
     def detect(self, data_point: float) -> Tuple[bool, float]:
         """
@@ -26,8 +27,9 @@ class AnomalyDetector:
             data_point (float): The current data point to analyze.
 
         Returns:
-            Tuple[bool, float]: A tuple containing a boolean indicating if the point is an anomaly,
-                                and the maximum Z-score of the extracted features.
+            Tuple[bool, float]: A tuple containing a boolean indicating if the point is an anomaly,and the maximum Z-score of the extracted features.
+                                Z= (X - μ) / σ
+            where X is the data point, μ is the mean of the window, and σ is the standard deviation of the window.
         """
         features = self.feature_extractor.extract(data_point)
 
